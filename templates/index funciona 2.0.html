@@ -1,0 +1,197 @@
+<!DOCTYPE html>
+<html lang="es" data-theme="light">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title data-i18n="title">Te lo resumo AI nomás</title>
+
+  <link href="https://cdn.jsdelivr.net/npm/tailwindcss@2.2.19/dist/tailwind.min.css" rel="stylesheet">
+
+  <style>
+    body { background:#f3f4f6; color:#1f2937; transition:background .2s,color .2s; }
+    body.dark{ background:#111827; color:#f9fafb; }
+    .card{ background:#ffffff; color:#1f2937; transition:background .2s,color .2s; }
+    body.dark .card{ background:#1f2937; color:#f9fafb; }
+
+    footer { text-align: center; }
+  
+
+body.dark select,
+body.dark textarea {
+  background-color: #1f2937;
+  color: #f9fafb;
+  border-color: #4b5563;
+}
+body.dark select:focus,
+body.dark textarea:focus {
+  outline: none;
+  border-color: #6b7280;
+}
+</style>
+</head>
+
+<body class="min-h-screen flex items-center justify-center px-4">
+  <div class="w-full max-w-2xl card rounded-2xl shadow-xl p-8 space-y-6">
+    <div class="flex justify-between items-center">
+      <h1 class="text-2xl font-semibold" data-i18n="title">🧠 Te lo resumo AI nomás</h1>
+      <div class="flex gap-2">
+        <button id="btnDark" class="text-sm px-2 py-1 rounded bg-gray-200 dark:bg-gray-700 switch" title="Dark/Light">🌙</button>
+        <button id="btnLang" class="text-sm px-2 py-1 rounded bg-gray-200 dark:bg-gray-700 switch" title="ES/EN">🌐</button>
+      </div>
+    </div>
+
+    <form method="POST" class="space-y-4">
+      <div>
+        <label class="block text-sm font-medium mb-1" for="tipo" data-i18n="type">Tipo de contenido:</label>
+        <select name="tipo" id="tipo" class="w-full px-4 py-2 border border-gray-300 rounded-xl focus:outline-none">
+          <option value="texto">📝 Texto</option>
+          <option value="noticia">📰 Link a Noticia</option>
+          <option value="youtube">📺 Video YouTube</option>
+          <option value="audio">🎧 Audio (beta)</option>
+        </select>
+      </div>
+
+      <div>
+        <label class="block text-sm font-medium mb-1" for="contenido" data-i18n="content">Contenido o URL:</label>
+        <textarea name="contenido" id="contenido" rows="6" placeholder="Pegá tu texto o link acá..." class="w-full px-4 py-2 border border-gray-300 rounded-xl focus:outline-none"></textarea>
+      </div>
+
+      <button type="submit" class="w-full bg-blue-600 text-white py-2 rounded-xl hover:bg-blue-700 transition" data-i18n="summarize">Resumir</button>
+    </form>
+
+    {% if resumen %}
+    <div class="flex flex-wrap gap-2 mt-4">
+      <button id="btnCopiar" class="bg-gray-600 text-white text-sm px-3 py-1 rounded hover:bg-gray-700">📋 Copiar</button>
+      <button id="btnPDF" class="bg-green-600 text-white text-sm px-3 py-1 rounded hover:bg-green-700">📄 PDF</button>
+      <button id="btnDOC" class="bg-blue-600 text-white text-sm px-3 py-1 rounded hover:bg-blue-700">📝 Word</button>
+    </div>
+
+    <div class="card p-4 rounded-xl mt-4">
+      <h2 class="text-lg font-medium mb-2">📌 Resumen:</h2>
+      <p class="text-sm whitespace-pre-wrap">{{ resumen }}</p>
+    </div>
+    {% endif %}
+
+    {% if error %}
+    <div class="text-sm p-3 rounded bg-red-100 text-red-800 dark:bg-red-900 dark:text-red-200">
+      {{ error }}
+    </div>
+    {% endif %}
+
+    <footer class="text-center text-xs text-gray-500 dark:text-gray-400 mt-6 space-y-2">
+      <div class="flex flex-wrap justify-center items-center gap-2">
+        <span data-i18n="coffee">💖 ¿Te gusta esta app?</span>
+        <a href="https://cafecito.app/marianobiotico" target="_blank" class="underline hover:text-blue-400">Cafecito</a>
+        <a href="https://www.buymeacoffee.com/marianobiotico" target="_blank" class="underline hover:text-yellow-500">BuyMeACoffee</a>
+        <a href="https://github.com/electrobiotica" target="_blank" title="GitHub" class="hover:text-white">GitHub</a>
+        <a href="https://instagram.com/marianobiotico" target="_blank" title="Instagram" class="hover:text-pink-500">Instagram</a>
+        <a href="mailto:marianobiotico@gmail.com" title="Email" class="hover:text-blue-400">Email</a>
+        <a href="https://wa.me/5491127278058" target="_blank" title="WhatsApp" class="hover:text-green-400">WhatsApp</a>
+      </div>
+      <div>
+        <span data-i18n="footer_title">Te lo resumo AI nomás • 2025</span>
+      </div>
+    </footer>
+  </div>
+
+  <script>
+    let LANG = localStorage.getItem("lang") || (navigator.language.startsWith("es") ? "es" : "en");
+    let DARK = localStorage.getItem("dark") === "true";
+
+    function applyLang() {
+      document.documentElement.lang = LANG;
+      document.querySelectorAll("[data-i18n]").forEach(el => {
+        const key = el.getAttribute("data-i18n");
+        if (STR[LANG][key]) el.textContent = STR[LANG][key];
+      });
+      document.getElementById("contenido").placeholder = LANG === "es" ? "Pegá tu texto o link acá..." : "Paste your text or link here...";
+    }
+    function cambiarIdioma() {
+      LANG = LANG === "es" ? "en" : "es";
+      localStorage.setItem("lang", LANG);
+      applyLang();
+    }
+    function applyDark() {
+      if (DARK) document.body.classList.add("dark");
+      else document.body.classList.remove("dark");
+      localStorage.setItem("dark", DARK);
+    }
+    function toggleModoOscuro() {
+      DARK = !DARK;
+      applyDark();
+    }
+
+    const STR = {
+      es: {
+        title: "🧠 Te lo resumo AI nomás",
+        type: "Tipo de contenido:",
+        content: "Contenido o URL:",
+        summarize: "Resumir",
+        coffee: "💖 ¿Te gusta esta app?",
+        footer_title: "Te lo resumo AI nomás • 2025"
+      },
+      en: {
+        title: "🧠 AI Summary Tool",
+        type: "Content type:",
+        content: "Content or URL:",
+        summarize: "Summarize",
+        coffee: "💖 Enjoying this app?",
+        footer_title: "AI Summary Tool • 2025"
+      }
+    };
+
+    document.getElementById("btnDark").addEventListener("click", toggleModoOscuro);
+    document.getElementById("btnLang").addEventListener("click", cambiarIdioma);
+    applyDark();
+    applyLang();
+  </script>
+
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js"></script>
+  <script>
+    document.addEventListener("DOMContentLoaded", () => {
+      const btnCopiar = document.getElementById("btnCopiar");
+      const btnPDF = document.getElementById("btnPDF");
+      const btnDOC = document.getElementById("btnDOC");
+      const resumenEl = document.querySelector("div.card p");
+
+      if (btnCopiar && resumenEl) {
+        btnCopiar.onclick = () => {
+          navigator.clipboard.writeText(resumenEl.innerText);
+          btnCopiar.innerText = "✅ Copiado";
+          setTimeout(() => btnCopiar.innerText = "📋 Copiar", 1500);
+        };
+      }
+
+      if (btnPDF && resumenEl) {
+        btnPDF.onclick = () => {
+          const element = document.createElement("div");
+          element.innerHTML = "<h1 style='font-size:16px'>Resumen</h1><p>" + resumenEl.innerText + "</p>";
+          html2pdf().from(element).set({
+            margin: 0.5,
+            filename: "resumen.pdf",
+            html2canvas: { scale: 2 },
+            jsPDF: { unit: "in", format: "letter", orientation: "portrait" }
+          }).save();
+        };
+      }
+
+      if (btnDOC && resumenEl) {
+        btnDOC.onclick = () => {
+          const blob = new Blob([
+            "<html><head><meta charset='UTF-8'></head><body><h1>Resumen</h1><p>" +
+            resumenEl.innerText.replace(/\n/g, "<br>") +
+            "</p></body></html>"
+          ], { type: "application/msword" });
+
+          const url = URL.createObjectURL(blob);
+          const a = document.createElement("a");
+          a.href = url;
+          a.download = "resumen.doc";
+          a.click();
+          URL.revokeObjectURL(url);
+        };
+      }
+    });
+  </script>
+</body>
+</html>
